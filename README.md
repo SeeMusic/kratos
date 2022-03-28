@@ -15,6 +15,12 @@
   
 ##### Translate to: [简体中文](README_zh.md)
 
+## Install Kratos
+
+```shell
+go install github.com/SeeMusic/kratos/cmd/kratos/v2@latest
+```
+
 ## About Kratos
   
 > The name is inspired by the game God of War which is based on Greek myths, tells the Kratos from mortals to become a God of War and launches the adventure of killing god.
