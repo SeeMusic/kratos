@@ -4,9 +4,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/SeeMusic/kratos/v2/encoding"
-	"github.com/SeeMusic/kratos/v2/errors"
-	"github.com/SeeMusic/kratos/v2/internal/httputil"
+	"github.com/go-kratos/kratos/v2/encoding"
+	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/go-kratos/kratos/v2/internal/httputil"
 )
 
 // SupportPackageIsVersion1 These constants should not be referenced from any other code.
@@ -30,6 +30,9 @@ func DefaultRequestDecoder(r *http.Request, v interface{}) error {
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		return errors.BadRequest("CODEC", err.Error())
+	}
+	if len(data) == 0 {
+		return nil
 	}
 	if err = codec.Unmarshal(data, v); err != nil {
 		return errors.BadRequest("CODEC", err.Error())

@@ -7,13 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SeeMusic/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/log"
 
 	// init encoding
-	_ "github.com/SeeMusic/kratos/v2/encoding/json"
-	_ "github.com/SeeMusic/kratos/v2/encoding/proto"
-	_ "github.com/SeeMusic/kratos/v2/encoding/xml"
-	_ "github.com/SeeMusic/kratos/v2/encoding/yaml"
+	_ "github.com/go-kratos/kratos/v2/encoding/json"
+	_ "github.com/go-kratos/kratos/v2/encoding/proto"
+	_ "github.com/go-kratos/kratos/v2/encoding/xml"
+	_ "github.com/go-kratos/kratos/v2/encoding/yaml"
 )
 
 var (
@@ -104,7 +104,7 @@ func (c *config) Load() error {
 			return err
 		}
 		for _, v := range kvs {
-			c.log.Infof("config loaded: %s format: %s", v.Key, v.Format)
+			c.log.Debugf("config loaded: %s format: %s", v.Key, v.Format)
 		}
 		if err = c.reader.Merge(kvs...); err != nil {
 			c.log.Errorf("failed to merge config source: %v", err)

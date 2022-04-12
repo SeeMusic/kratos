@@ -2,15 +2,16 @@ package gen
 
 import (
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/SeeMusic/kratos/cmd/kratos/v2/internal/base"
-	"github.com/spf13/cobra"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/SeeMusic/kratos/cmd/kratos/v2/internal/base"
+	"github.com/spf13/cobra"
 )
 
 var long = `
@@ -49,7 +50,7 @@ func init() {
 	CmdGen.Flags().BoolVar(&genAll, "all", genAll, "generate all code")
 	CmdGen.Flags().BoolVar(&genOpenapi, "openapi", genOpenapi, "generate openapi code")
 	CmdGen.Flags().BoolVar(&genError, "error", genError, "generate kratos error code")
-	CmdGen.Flags().BoolVar(&genHttp, "http", genHttp, "generate http code")
+	CmdGen.Flags().BoolVar(&genHTTP, "http", genHTTP, "generate http code")
 	CmdGen.Flags().BoolVar(&genGrpc, "grpc", genGrpc, "generate grpc code")
 
 	CmdGen.Flags().BoolVarP(&verbose, "verbose", "v", verbose, "show more information")
@@ -61,7 +62,7 @@ var (
 	dir        string
 	verbose    = false
 	genGrpc    = true
-	genHttp    = false
+	genHTTP    = false
 	genOpenapi = false
 	genError   = false
 	genAll     = false
@@ -105,7 +106,7 @@ func seeMusic(cmd *cobra.Command, args []string) {
 		fmt.Printf("search dir: %s\n", dir)
 	}
 
-	protoFiles, err := findProto(currentDir, dir, expr)
+	protoFiles, _ := findProto(currentDir, dir, expr)
 
 	if len(protoFiles) == 0 {
 		fmt.Println("no proto file found.")
@@ -185,7 +186,7 @@ func gen(baseDir, curDir, proto string, args []string) error {
 	}
 
 	inputDir := filepath.Dir(proto)
-	var input = []string{
+	input := []string{
 		"--proto_path=" + inputDir,
 		"--proto_path=" + thirdParty,
 		"--proto_path=" + api,
@@ -204,7 +205,7 @@ func gen(baseDir, curDir, proto string, args []string) error {
 		if genGrpc {
 			input = append(input, "--go-grpc_out=paths=source_relative:"+inputDir)
 		}
-		if genHttp {
+		if genHTTP {
 			input = append(input, "--go-http_out=paths=source_relative:"+inputDir)
 		}
 		if genError {

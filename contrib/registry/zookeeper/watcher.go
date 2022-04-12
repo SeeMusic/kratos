@@ -3,7 +3,7 @@ package zookeeper
 import (
 	"context"
 
-	"github.com/SeeMusic/kratos/v2/registry"
+	"github.com/go-kratos/kratos/v2/registry"
 )
 
 var _ registry.Watcher = &watcher{}

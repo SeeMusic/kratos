@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SeeMusic/kratos/v2/registry"
-	"github.com/SeeMusic/kratos/v2/selector"
+	"github.com/go-kratos/kratos/v2/registry"
+	"github.com/go-kratos/kratos/v2/selector"
 )
 
 func TestDirect(t *testing.T) {
@@ -31,11 +31,11 @@ func TestDirect(t *testing.T) {
 	if !reflect.DeepEqual(float64(10), wn.Weight()) {
 		t.Errorf("expect %v, got %v", float64(10), wn.Weight())
 	}
-	if time.Millisecond*15 <= wn.PickElapsed() {
-		t.Errorf("time.Millisecond*15 <= wn.PickElapsed()(%s)", wn.PickElapsed())
+	if time.Millisecond*20 <= wn.PickElapsed() {
+		t.Errorf("20ms <= wn.PickElapsed()(%s)", wn.PickElapsed())
 	}
-	if time.Millisecond*5 >= wn.PickElapsed() {
-		t.Errorf("time.Millisecond*5 >= wn.PickElapsed()(%s)", wn.PickElapsed())
+	if time.Millisecond*10 >= wn.PickElapsed() {
+		t.Errorf("10ms >= wn.PickElapsed()(%s)", wn.PickElapsed())
 	}
 }
 

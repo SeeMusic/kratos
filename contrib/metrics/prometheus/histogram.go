@@ -1,7 +1,7 @@
 package prometheus
 
 import (
-	"github.com/SeeMusic/kratos/v2/metrics"
+	"github.com/go-kratos/kratos/v2/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
