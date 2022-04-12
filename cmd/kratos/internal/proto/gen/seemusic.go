@@ -49,7 +49,7 @@ func init() {
 	CmdGen.Flags().BoolVar(&genAll, "all", genAll, "generate all code")
 	CmdGen.Flags().BoolVar(&genOpenapi, "openapi", genOpenapi, "generate openapi code")
 	CmdGen.Flags().BoolVar(&genError, "error", genError, "generate kratos error code")
-	CmdGen.Flags().BoolVar(&genHttp, "http", genHttp, "generate http code")
+	CmdGen.Flags().BoolVar(&genHTTP, "http", genHTTP, "generate http code")
 	CmdGen.Flags().BoolVar(&genGrpc, "grpc", genGrpc, "generate grpc code")
 
 	CmdGen.Flags().BoolVarP(&verbose, "verbose", "v", verbose, "show more information")
@@ -61,7 +61,7 @@ var (
 	dir        string
 	verbose    = false
 	genGrpc    = true
-	genHttp    = false
+	genHTTP    = false
 	genOpenapi = false
 	genError   = false
 	genAll     = false
@@ -204,7 +204,7 @@ func gen(baseDir, curDir, proto string, args []string) error {
 		if genGrpc {
 			input = append(input, "--go-grpc_out=paths=source_relative:"+inputDir)
 		}
-		if genHttp {
+		if genHTTP {
 			input = append(input, "--go-http_out=paths=source_relative:"+inputDir)
 		}
 		if genError {
