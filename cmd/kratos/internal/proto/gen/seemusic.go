@@ -159,7 +159,11 @@ func findProto(curDir, dir string, expr string) ([]string, error) {
 }
 
 func modDir() (string, error) {
-	mod, err := base.FindModulePath(".")
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	mod, err := base.FindModulePath(wd)
 	if err != nil {
 		return "", err
 	}

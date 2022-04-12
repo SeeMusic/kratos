@@ -3,6 +3,7 @@ package base
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,18 +12,27 @@ import (
 	"golang.org/x/mod/modfile"
 )
 
+func pathExists(path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		return os.IsExist(err)
+	}
+	return true
+}
+
 // FindModulePath returns go.mod file path
 func FindModulePath(current string) (string, error) {
-	target, err := filepath.Abs(current)
-	if err != nil {
-		return "", err
+	if !filepath.IsAbs(current) {
+		return "", errors.New("need an absolute path")
 	}
-	name := filepath.Join(target, "go.mod")
-	_, err = os.Stat(name)
-	if err != nil {
-		return FindModulePath(filepath.Join(target, ".."))
+	if current == "/" {
+		return "", errors.New("go.mod not found")
 	}
-	return name, nil
+	name := filepath.Join(current, "go.mod")
+	if pathExists(name) {
+		return name, nil
+	}
+	return FindModulePath(filepath.Dir(current))
 }
 
 // ModulePath returns go module path.
