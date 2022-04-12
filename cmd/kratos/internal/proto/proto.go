@@ -3,6 +3,7 @@ package proto
 import (
 	"github.com/SeeMusic/kratos/cmd/kratos/v2/internal/proto/add"
 	"github.com/SeeMusic/kratos/cmd/kratos/v2/internal/proto/client"
+	"github.com/SeeMusic/kratos/cmd/kratos/v2/internal/proto/gen"
 	"github.com/SeeMusic/kratos/cmd/kratos/v2/internal/proto/server"
 
 	"github.com/spf13/cobra"
@@ -20,6 +21,7 @@ func init() {
 	CmdProto.AddCommand(add.CmdAdd)
 	CmdProto.AddCommand(client.CmdClient)
 	CmdProto.AddCommand(server.CmdServer)
+	CmdProto.AddCommand(gen.CmdGen)
 }
 
 func run(cmd *cobra.Command, args []string) {
