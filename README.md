@@ -18,7 +18,7 @@
 ## Install Kratos
 
 ```shell
-go install github.com/go-kratos/kratos/cmd/kratos/v2@latest
+go install github.com/SeeMusic/kratos/cmd/kratos/v2@latest
 ```
 
 ## About Kratos

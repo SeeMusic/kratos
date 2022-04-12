@@ -60,12 +60,12 @@ Kratos 一套轻量级 Go 微服务框架，包含大量微服务相关功能及
 ### Installing
 ##### go install 安装：
 ```
-go install github.com/go-kratos/kratos/cmd/kratos/v2@latest
+go install github.com/SeeMusic/kratos/cmd/kratos/v2@latest
 kratos upgrade
 ```
 ##### 源码编译安装：
 ```
-git clone https://github.com/go-kratos/kratos
+git clone https://github.com/SeeMusic/kratos
 cd kratos
 make install
 ```
