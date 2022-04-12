@@ -27,9 +27,9 @@ will generate go, grpc, http, openapi, kratos error code for you.
 you can use options to generate specific code you want.
 
 example:
-	kratos proto gen -e tag* --http --grpc 
+	kratos proto gen -e tag.* --http --grpc 
 	
-this will find all proto files that matches 'tag*.proto$', and let
+this will find all proto files that matches 'tag.*.proto$', and let
 you choose too. and then will generate go, http, grpc code for 
 you
 `
@@ -68,14 +68,6 @@ var (
 )
 
 func seeMusic(cmd *cobra.Command, args []string) {
-	fmt.Printf("expr: %s", expr)
-	fmt.Printf("dir: %s", dir)
-	fmt.Printf("verbose: %v", verbose)
-	fmt.Printf("genGrpc: %v", genGrpc)
-	fmt.Printf("genHttp: %v", genHttp)
-	fmt.Printf("genOpenapi: %v", genOpenapi)
-	fmt.Printf("genError: %v", genError)
-	fmt.Printf("genAll: %v", genAll)
 	var (
 		baseDir    string
 		currentDir string
@@ -86,6 +78,10 @@ func seeMusic(cmd *cobra.Command, args []string) {
 		expr = ".*.proto$"
 	} else {
 		expr = expr + ".proto$"
+	}
+
+	if verbose {
+		fmt.Printf("use regexp: '%s'\n", expr)
 	}
 
 	baseDir, err = modDir()
@@ -105,7 +101,16 @@ func seeMusic(cmd *cobra.Command, args []string) {
 		dir = filepath.Join(baseDir, dir)
 	}
 
+	if verbose {
+		fmt.Printf("search dir: %s\n", dir)
+	}
+
 	protoFiles, err := findProto(currentDir, dir, expr)
+
+	if len(protoFiles) == 0 {
+		fmt.Println("no proto file found.")
+		return
+	}
 
 	var target string
 
@@ -166,6 +171,10 @@ func gen(baseDir, curDir, proto string, args []string) error {
 	if err != nil {
 		return err
 	}
+	api, err := filepath.Rel(curDir, filepath.Join(baseDir, "api"))
+	if err != nil {
+		return err
+	}
 	proto, err = filepath.Abs(proto)
 	if err != nil {
 		return err
@@ -176,12 +185,15 @@ func gen(baseDir, curDir, proto string, args []string) error {
 	}
 
 	inputDir := filepath.Dir(proto)
-	var input = []string{"--proto_path=" + inputDir}
+	var input = []string{
+		"--proto_path=" + inputDir,
+		"--proto_path=" + thirdParty,
+		"--proto_path=" + api,
+		"--go_out=paths=source_relative:" + inputDir,
+	}
 
 	if genAll {
 		inputExt := []string{
-			"--proto_path=" + thirdParty,
-			"--go_out=paths=source_relative:" + inputDir,
 			"--go-grpc_out=paths=source_relative:" + inputDir,
 			"--go-http_out=paths=source_relative:" + inputDir,
 			"--go-errors_out=paths=source_relative:" + inputDir,
