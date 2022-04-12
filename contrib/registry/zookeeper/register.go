@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-zookeeper/zk"
 
-	"github.com/SeeMusic/kratos/v2/registry"
+	"github.com/go-kratos/kratos/v2/registry"
 )
 
 var (

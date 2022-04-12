@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/SeeMusic/kratos/v2/middleware"
-	"github.com/SeeMusic/kratos/v2/transport"
+	"github.com/go-kratos/kratos/v2/middleware"
+	"github.com/go-kratos/kratos/v2/transport"
 )
 
 type (

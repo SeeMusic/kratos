@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SeeMusic/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/log"
 
-	"github.com/SeeMusic/kratos/v2/registry"
+	"github.com/go-kratos/kratos/v2/registry"
 
 	"github.com/polarismesh/polaris-go/api"
 	"github.com/polarismesh/polaris-go/pkg/config"
