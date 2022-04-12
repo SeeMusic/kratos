@@ -2,15 +2,16 @@ package gen
 
 import (
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/SeeMusic/kratos/cmd/kratos/v2/internal/base"
-	"github.com/spf13/cobra"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/SeeMusic/kratos/cmd/kratos/v2/internal/base"
+	"github.com/spf13/cobra"
 )
 
 var long = `
@@ -105,7 +106,7 @@ func seeMusic(cmd *cobra.Command, args []string) {
 		fmt.Printf("search dir: %s\n", dir)
 	}
 
-	protoFiles, err := findProto(currentDir, dir, expr)
+	protoFiles, _ := findProto(currentDir, dir, expr)
 
 	if len(protoFiles) == 0 {
 		fmt.Println("no proto file found.")
@@ -185,7 +186,7 @@ func gen(baseDir, curDir, proto string, args []string) error {
 	}
 
 	inputDir := filepath.Dir(proto)
-	var input = []string{
+	input := []string{
 		"--proto_path=" + inputDir,
 		"--proto_path=" + thirdParty,
 		"--proto_path=" + api,
