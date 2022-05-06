@@ -110,3 +110,16 @@ func (r *Repo) CopyTo(ctx context.Context, to string, importPath string, ignores
 	}
 	return copyDir(r.Path(), to, []string{"musicverse/app/example", importPath}, ignores)
 }
+
+// CopyToV2 copies the repository to project path
+func (r *Repo) CopyToV2(ctx context.Context, to string, modPath string, ignores, replaces []string) error {
+	if err := r.Clone(ctx); err != nil {
+		return err
+	}
+	mod, err := ModulePath(path.Join(r.Path(), "go.mod"))
+	if err != nil {
+		return err
+	}
+	replaces = append([]string{mod, modPath}, replaces...)
+	return copyDir(r.Path(), to, replaces, ignores)
+}

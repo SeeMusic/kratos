@@ -42,8 +42,8 @@ func Run(cmd *cobra.Command, args []string) {
 			fmt.Fprintf(os.Stderr, "\033[31mERROR: %s\033[m\n", "The cmd directory cannot be found in the current directory")
 			return
 		} else if len(cmdPath) == 1 {
-			for k, v := range cmdPath {
-				dir = path.Join(v, k)
+			for _, v := range cmdPath {
+				dir = v
 			}
 		} else {
 			var cmdPaths []string
@@ -51,14 +51,15 @@ func Run(cmd *cobra.Command, args []string) {
 				cmdPaths = append(cmdPaths, k)
 			}
 			prompt := &survey.Select{
-				Message: "Which directory do you want to run?",
-				Options: cmdPaths,
+				Message:  "Which directory do you want to run?",
+				Options:  cmdPaths,
+				PageSize: 10,
 			}
 			e := survey.AskOne(prompt, &dir)
 			if e != nil || dir == "" {
 				return
 			}
-			dir = path.Join(cmdPath[dir], dir)
+			dir = cmdPath[dir]
 		}
 	}
 	fd := exec.Command("go", "run", ".")
@@ -72,6 +73,13 @@ func Run(cmd *cobra.Command, args []string) {
 }
 
 func findCMD(base string) (map[string]string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	if !strings.HasSuffix(wd, "/") {
+		wd += "/"
+	}
 	var root bool
 	next := func(dir string) (map[string]string, error) {
 		cmdPath := make(map[string]string)
@@ -84,8 +92,8 @@ func findCMD(base string) (map[string]string, error) {
 				}
 				for _, fileInfo := range paths {
 					if fileInfo.IsDir() {
-						parent := filepath.Join(walkPath, "..")
-						cmdPath[path.Join(filepath.Base(parent), filepath.Base(walkPath), fileInfo.Name())] = filepath.Join(parent, "..")
+						abs := path.Join(walkPath, fileInfo.Name())
+						cmdPath[strings.TrimPrefix(abs, wd)] = abs
 					}
 				}
 				return nil
