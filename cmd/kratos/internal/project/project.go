@@ -11,7 +11,6 @@ import (
 	"github.com/SeeMusic/kratos/cmd/kratos/v2/internal/base"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/go-kratos/kratos/cmd/kratos/v2/internal/base"
 	"github.com/spf13/cobra"
 )
 

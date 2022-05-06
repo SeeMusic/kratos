@@ -8,7 +8,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
-	"github.com/go-kratos/kratos/cmd/kratos/v2/internal/base"
+	"github.com/SeeMusic/kratos/cmd/kratos/v2/internal/base"
 )
 
 var repoAddIgnores = []string{
