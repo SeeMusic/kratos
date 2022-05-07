@@ -3,6 +3,7 @@ package gen
 import (
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,128 +16,151 @@ import (
 )
 
 var long = `
-Generate the proto Golang code. You can use this command anywhere 
-inside of your project, kratos will find the proto file you want.
+生成 protobuf 的 Golang 代码
 
-example:
-	kratos proto gen --all
+默认为查找<项目目录>下所有的 proto 文件，由调用者选择需要生成的 proto 文件。
+这个选项为多选，每个选中的 proto 文件都会单独执行一次 protoc 命令。
 
-this command will find all proto files in your project, and let 
-you choose which proto file you want to generate. then, kratos 
-will generate go, grpc, http, openapi, kratos error code for you.
+默认只会生成 <filename>.pb.go 文件，如果需要生成更多类型的 Golang 代码，
+可以使用 --all / --grpc / --http / --error / --openapi
 
-you can use options to generate specific code you want.
+	example: kratos proto gen -e 'admin.*'
 
-example:
-	kratos proto gen -e tag.* --http --grpc 
-	
-this will find all proto files that matches 'tag.*.proto$', and let
-you choose too. and then will generate go, http, grpc code for 
-you
+	会查找所有文件路径上带有 admin 的 proto 文件，然后你可以自由选择需要的
+	proto 文件来生成对应的 Golang 代码
+
+可以使用 -d / --dir 指定要生成 go 代码的 proto 文件所在的目录，用一条命令
+生成 dir 下所有的 proto 文件的 go 代码。当同一个目录下有多个 proto 文件但
+想把定义的 openapi 输出到一个 openapi.yaml 时很有用(这大概是唯一的方式)
+
+	example: kratos proto gen -d api/core/admin/v1 --openapi
+
+	这会在 api/core/admin/v1 目录下生成对应 proto 文件的 pb.go 文件和
+	一个 openapi.yaml 文件
 `
 
-// CmdGen represents the source command.
 var CmdGen = &cobra.Command{
 	Use:   "gen",
 	Short: "Generate the proto Golang code",
 	Long:  long,
-	Run:   seeMusic,
+	Run:   run,
 }
 
 func init() {
-	CmdGen.Flags().StringVarP(&expr, "exp", "e", expr, "use regexp")
-	CmdGen.Flags().StringVarP(&dir, "dir", "d", dir, "dir to search protobuf files")
+	log.SetFlags(log.LstdFlags)
 
-	CmdGen.Flags().BoolVar(&genAll, "all", genAll, "generate all code")
-	CmdGen.Flags().BoolVar(&genOpenapi, "openapi", genOpenapi, "generate openapi code")
-	CmdGen.Flags().BoolVar(&genError, "error", genError, "generate kratos error code")
-	CmdGen.Flags().BoolVar(&genHTTP, "http", genHTTP, "generate http code")
-	CmdGen.Flags().BoolVar(&genGrpc, "grpc", genGrpc, "generate grpc code")
+	CmdGen.Flags().StringVarP(&expr, "expr", "e", expr, "使用正则表达式来匹配文件")
+	CmdGen.Flags().StringVarP(&dir, "dir", "d", dir, "生成该文件夹下所有 proto 文件的 go 代码")
+	CmdGen.Flags().BoolVar(&genAll, "all", genAll, "生成所有类型的 go 代码，包括 grpc, http, openapi, kratos error code")
+	CmdGen.Flags().BoolVar(&genOpenapi, "openapi", genOpenapi, "生成 openapi.yaml 文件")
+	CmdGen.Flags().BoolVar(&genError, "error", genError, "生成 kratos error code")
+	CmdGen.Flags().BoolVar(&genHTTP, "http", genHTTP, "生成 http code")
+	CmdGen.Flags().BoolVar(&genGrpc, "grpc", genGrpc, "生成 grpc code")
+	CmdGen.Flags().BoolVarP(&verbose, "verbose", "v", verbose, "显示详细更多日志信息")
 
-	CmdGen.Flags().BoolVarP(&verbose, "verbose", "v", verbose, "show more information")
+	initDirs()
 }
 
-// commands
 var (
+	currentDir string
+	rootDir    string
 	expr       string
 	dir        string
-	verbose    = false
-	genGrpc    = true
-	genHTTP    = false
-	genOpenapi = false
-	genError   = false
-	genAll     = false
+	verbose    bool
+	genGrpc    bool
+	genHTTP    bool
+	genOpenapi bool
+	genError   bool
+	genAll     bool
 )
 
-func seeMusic(cmd *cobra.Command, args []string) {
+func initDirs() {
 	var (
-		baseDir    string
-		currentDir string
-		err        error
+		err    error
+		modDir string
 	)
-
-	if expr == "" {
-		expr = ".*.proto$"
-	} else {
-		expr = expr + ".proto$"
-	}
-
-	if verbose {
-		fmt.Printf("use regexp: '%s'\n", expr)
-	}
-
-	baseDir, err = modDir()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 	currentDir, err = os.Getwd()
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatalf("get current dir failed: %s\n", err)
 	}
 
-	if dir == "" {
-		dir = baseDir
-	} else {
-		dir = filepath.Join(baseDir, dir)
+	modDir, err = base.FindModulePath(currentDir)
+	if err != nil {
+		log.Fatalf("find module path failed: %s\n", err)
+	}
+	rootDir = filepath.Dir(modDir)
+}
+
+func run(cmd *cobra.Command, args []string) {
+	if verbose {
+		log.Printf("current dir: %s\n", currentDir)
+		log.Printf("root dir: %s\n", rootDir)
+	}
+
+	protos, err := findProtos()
+	if err != nil {
+		log.Fatalf("find protos failed: %s\n", err)
 	}
 
 	if verbose {
-		fmt.Printf("search dir: %s\n", dir)
+		log.Printf("find %d proto files\n", len(protos))
 	}
 
-	protoFiles, _ := findProto(currentDir, dir, expr)
-
-	if len(protoFiles) == 0 {
-		fmt.Println("no proto file found.")
+	// dir 单独处理
+	if dir != "" {
+		inputs, err := commandArgs(dir, protos...)
+		if err != nil {
+			log.Fatalf("get default proto path failed: %s\n", err)
+		}
+		gen(inputs)
 		return
 	}
 
-	var target string
-
-	op := survey.Select{
-		Message: "which proto file you want to generate?",
-		Options: protoFiles,
-	}
-	if err = survey.AskOne(&op, &target); err != nil {
-		fmt.Println(err)
-		return
+	q := &survey.MultiSelect{
+		Message:  "📌 which protos do you want to generate?",
+		Options:  protos,
+		PageSize: 10,
 	}
 
-	if err = gen(baseDir, currentDir, target, args); err != nil {
-		fmt.Println(err)
+	var targets []string
+	err = survey.AskOne(q, &targets)
+	if err != nil {
+		log.Fatalf("ask proto failed: %s\n", err)
+	}
+
+	for _, t := range targets {
+		inputDir := filepath.Dir(t)
+		inputs, err := commandArgs(inputDir, t)
+		if err != nil {
+			log.Fatalf("get default proto path failed: %s\n", err)
+		}
+		if err := gen(inputs); err != nil {
+			log.Printf("gen proto failed: %s\n", err)
+		}
 	}
 }
 
-func findProto(curDir, dir string, expr string) ([]string, error) {
-	reg, err := regexp.Compile(expr)
+func getExpr() *regexp.Regexp {
+	if expr == "" {
+		return regexp.MustCompile(".*.proto$")
+	}
+	return regexp.MustCompile(expr + ".+.proto$")
+}
+
+func findProtos() ([]string, error) {
+	lookPath := rootDir
+	if dir != "" {
+		lookPath = dir
+	}
+	var err error
+	lookPath, err = filepath.Abs(lookPath)
 	if err != nil {
 		return nil, err
 	}
+	reg := getExpr()
 
 	var protoFiles []string
-	err = filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(lookPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -147,7 +171,10 @@ func findProto(curDir, dir string, expr string) ([]string, error) {
 			return nil
 		}
 		if reg.MatchString(path) {
-			p, _ := filepath.Rel(curDir, path)
+			p, err := filepath.Rel(currentDir, path)
+			if err != nil {
+				return err
+			}
 			protoFiles = append(protoFiles, p)
 		}
 		return nil
@@ -158,90 +185,63 @@ func findProto(curDir, dir string, expr string) ([]string, error) {
 	return protoFiles, nil
 }
 
-func modDir() (string, error) {
-	wd, err := os.Getwd()
+func commandArgs(inputDir string, target ...string) ([]string, error) {
+	thirdParty, err := filepath.Rel(currentDir, filepath.Join(rootDir, "third_party"))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	mod, err := base.FindModulePath(wd)
+	api, err := filepath.Rel(currentDir, filepath.Join(rootDir, "api"))
 	if err != nil {
-		return "", err
-	}
-	return filepath.Dir(mod), nil
-}
-
-// generate is used to execute the generate command for the specified proto file
-func gen(baseDir, curDir, proto string, args []string) error {
-	thirdParty, err := filepath.Rel(curDir, filepath.Join(baseDir, "third_party"))
-	if err != nil {
-		return err
-	}
-	api, err := filepath.Rel(curDir, filepath.Join(baseDir, "api"))
-	if err != nil {
-		return err
-	}
-	proto, err = filepath.Abs(proto)
-	if err != nil {
-		return err
-	}
-	proto, err = filepath.Rel(curDir, proto)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
-	inputDir := filepath.Dir(proto)
-	input := []string{
-		"--proto_path=" + inputDir,
-		"--proto_path=" + thirdParty,
-		"--proto_path=" + api,
-		"--go_out=paths=source_relative:" + inputDir,
-	}
+	var args []string
 
+	// inputDir 一定要声明，而且一定要放在第一位，不然生成的 .go 文件
+	// 的路径会很迷惑。。。应该是和 source_relative 有关。
+	args = append(args, "--proto_path="+inputDir)
+	args = append(args, "--proto_path="+thirdParty)
+	args = append(args, "--proto_path="+api)
+
+	args = append(args, "--go_out=paths=source_relative:"+inputDir)
 	if genAll {
-		inputExt := []string{
-			"--go-grpc_out=paths=source_relative:" + inputDir,
-			"--go-http_out=paths=source_relative:" + inputDir,
-			"--go-errors_out=paths=source_relative:" + inputDir,
-			"--openapi_out=paths=source_relative:" + inputDir,
-		}
-		input = append(input, inputExt...)
+		args = append(args,
+			"--go-grpc_out=paths=source_relative:"+inputDir,
+			"--go-http_out=paths=source_relative:"+inputDir,
+			"--go-errors_out=paths=source_relative:"+inputDir,
+			"--openapi_out=paths=source_relative:"+inputDir,
+		)
 	} else {
 		if genGrpc {
-			input = append(input, "--go-grpc_out=paths=source_relative:"+inputDir)
+			args = append(args, "--go-grpc_out=paths=source_relative:"+inputDir)
 		}
 		if genHTTP {
-			input = append(input, "--go-http_out=paths=source_relative:"+inputDir)
+			args = append(args, "--go-http_out=paths=source_relative:"+inputDir)
 		}
 		if genError {
-			input = append(input, "--go-errors_out=paths=source_relative:"+inputDir)
+			args = append(args, "--go-errors_out=paths=source_relative:"+inputDir)
 		}
 		if genOpenapi {
-			input = append(input, "--openapi_out=paths=source_relative:"+inputDir)
+			args = append(args, "--openapi_out=paths=source_relative:"+inputDir)
 		}
 	}
 
-	protoBytes, err := os.ReadFile(proto)
-	if err == nil && len(protoBytes) > 0 {
-		if ok, _ := regexp.Match(`\n[^/]*(import)\s+"validate/validate.proto"`, protoBytes); ok {
-			input = append(input, "--validate_out=lang=go,paths=source_relative:"+inputDir)
-		}
-	}
-	input = append(input, proto)
-	for _, a := range args {
-		if strings.HasPrefix(a, "-") {
-			input = append(input, a)
-		}
-	}
-	fd := exec.Command("protoc", input...)
+	// TODO: add validate generator
+
+	args = append(args, target...)
+	return args, nil
+}
+
+func gen(args []string) error {
+	fd := exec.Command("protoc", args...)
 	fd.Stdout = os.Stdout
 	fd.Stderr = os.Stderr
 	fd.Dir = "."
 	if verbose {
-		fmt.Println(fd.String())
+		log.Printf("command: %s\n", fd.String())
 	}
 	if err := fd.Run(); err != nil {
 		return err
 	}
-	fmt.Printf("proto: %s\n", proto)
 	return nil
 }
