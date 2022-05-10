@@ -210,6 +210,8 @@ func commandArgs(inputDir string, target ...string) ([]string, error) {
 			"--go-http_out=paths=source_relative:"+inputDir,
 			"--go-errors_out=paths=source_relative:"+inputDir,
 			"--openapi_out=paths=source_relative:"+inputDir,
+			"--openapi_opt=naming=proto",
+			"--openapi_opt=default_response=false",
 		)
 	} else {
 		if genGrpc {
@@ -222,7 +224,12 @@ func commandArgs(inputDir string, target ...string) ([]string, error) {
 			args = append(args, "--go-errors_out=paths=source_relative:"+inputDir)
 		}
 		if genOpenapi {
-			args = append(args, "--openapi_out=paths=source_relative:"+inputDir)
+			args = append(
+				args,
+				"--openapi_out=paths=source_relative:"+inputDir,
+				"--openapi_opt=naming=proto",
+				"--openapi_opt=default_response=false",
+			)
 		}
 	}
 
