@@ -57,8 +57,6 @@ func init() {
 	CmdGen.Flags().BoolVar(&genHTTP, "http", genHTTP, "生成 http code")
 	CmdGen.Flags().BoolVar(&genGrpc, "grpc", genGrpc, "生成 grpc code")
 	CmdGen.Flags().BoolVarP(&verbose, "verbose", "v", verbose, "显示详细更多日志信息")
-
-	initDirs()
 }
 
 var (
@@ -92,6 +90,8 @@ func initDirs() {
 }
 
 func run(cmd *cobra.Command, args []string) {
+	initDirs()
+
 	if verbose {
 		log.Printf("current dir: %s\n", currentDir)
 		log.Printf("root dir: %s\n", rootDir)
