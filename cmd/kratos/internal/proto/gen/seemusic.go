@@ -1,7 +1,6 @@
 package gen
 
 import (
-	"fmt"
 	"io/fs"
 	"log"
 	"os"
@@ -108,7 +107,12 @@ func run(cmd *cobra.Command, args []string) {
 
 	// dir 单独处理
 	if dir != "" {
-		inputs, err := commandArgs(dir, protos...)
+		inputDir, err := filepath.Rel(currentDir, filepath.Join(rootDir, dir))
+		if err != nil {
+			log.Fatalf("get relative path failed: %s\n", err)
+		}
+
+		inputs, err := commandArgs(inputDir, protos...)
 		if err != nil {
 			log.Fatalf("get default proto path failed: %s\n", err)
 		}
@@ -116,16 +120,22 @@ func run(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	q := &survey.MultiSelect{
-		Message:  "📌 which protos do you want to generate?",
-		Options:  protos,
-		PageSize: 10,
-	}
-
 	var targets []string
-	err = survey.AskOne(q, &targets)
-	if err != nil {
-		log.Fatalf("ask proto failed: %s\n", err)
+
+	// 只有一个 proto 文件时直接生成，不让用户选择了
+	if len(protos) > 1 {
+		q := &survey.MultiSelect{
+			Message:  "📌 which protos do you want to generate?",
+			Options:  protos,
+			PageSize: 10,
+		}
+
+		err = survey.AskOne(q, &targets)
+		if err != nil {
+			log.Fatalf("ask proto failed: %s\n", err)
+		}
+	} else {
+		targets = protos
 	}
 
 	for _, t := range targets {
@@ -144,19 +154,20 @@ func getExpr() *regexp.Regexp {
 	if expr == "" {
 		return regexp.MustCompile(".*.proto$")
 	}
-	return regexp.MustCompile(expr + ".+.proto$")
+	return regexp.MustCompile(expr + ".*.proto$")
 }
 
 func findProtos() ([]string, error) {
 	lookPath := rootDir
+
 	if dir != "" {
 		lookPath = dir
+		if !filepath.IsAbs(lookPath) {
+			lookPath = filepath.Join(rootDir, lookPath)
+		}
 	}
+
 	var err error
-	lookPath, err = filepath.Abs(lookPath)
-	if err != nil {
-		return nil, err
-	}
 	reg := getExpr()
 
 	var protoFiles []string
@@ -180,48 +191,46 @@ func findProtos() ([]string, error) {
 		return nil
 	})
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	return protoFiles, nil
 }
 
 func commandArgs(inputDir string, target ...string) ([]string, error) {
-	thirdParty, err := filepath.Rel(currentDir, filepath.Join(rootDir, "third_party"))
-	if err != nil {
-		return nil, err
-	}
-	api, err := filepath.Rel(currentDir, filepath.Join(rootDir, "api"))
+	inputPath, err := filepath.Rel(currentDir, rootDir)
 	if err != nil {
 		return nil, err
 	}
 
-	var args []string
+	thirdPartyInputPath, err := filepath.Rel(currentDir, filepath.Join(rootDir, "third_party"))
+	if err != nil {
+		return nil, err
+	}
 
-	// inputDir 一定要声明，而且一定要放在第一位，不然生成的 .go 文件
-	// 的路径会很迷惑。。。应该是和 source_relative 有关。
-	args = append(args, "--proto_path="+inputDir)
-	args = append(args, "--proto_path="+thirdParty)
-	args = append(args, "--proto_path="+api)
+	args := []string{
+		"--proto_path=" + inputPath,
+		"--proto_path=" + thirdPartyInputPath,
+		"--go_out=paths=source_relative:" + inputPath,
+	}
 
-	args = append(args, "--go_out=paths=source_relative:"+inputDir)
 	if genAll {
 		args = append(args,
-			"--go-grpc_out=paths=source_relative:"+inputDir,
-			"--go-http_out=paths=source_relative:"+inputDir,
-			"--go-errors_out=paths=source_relative:"+inputDir,
+			"--go-grpc_out=paths=source_relative:"+inputPath,
+			"--go-http_out=paths=source_relative:"+inputPath,
+			"--go-errors_out=paths=source_relative:"+inputPath,
 			"--openapi_out=paths=source_relative:"+inputDir,
 			"--openapi_opt=naming=proto",
 			"--openapi_opt=default_response=false",
 		)
 	} else {
 		if genGrpc {
-			args = append(args, "--go-grpc_out=paths=source_relative:"+inputDir)
+			args = append(args, "--go-grpc_out=paths=source_relative:"+inputPath)
 		}
 		if genHTTP {
-			args = append(args, "--go-http_out=paths=source_relative:"+inputDir)
+			args = append(args, "--go-http_out=paths=source_relative:"+inputPath)
 		}
 		if genError {
-			args = append(args, "--go-errors_out=paths=source_relative:"+inputDir)
+			args = append(args, "--go-errors_out=paths=source_relative:"+inputPath)
 		}
 		if genOpenapi {
 			args = append(
