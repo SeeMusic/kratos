@@ -7,9 +7,14 @@ import (
 	"path"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/emicklei/proto"
 	"github.com/spf13/cobra"
 )
+
+var caser = cases.Title(language.English)
 
 // CmdServer the service command.
 var CmdServer = &cobra.Command{
@@ -58,12 +63,13 @@ func run(cmd *cobra.Command, args []string) {
 			}
 			for _, e := range s.Elements {
 				r, ok := e.(*proto.RPC)
-				if ok {
-					cs.Methods = append(cs.Methods, &Method{
-						Service: s.Name, Name: r.Name, Request: r.RequestType,
-						Reply: r.ReturnsType, Type: getMethodType(r.StreamsRequest, r.StreamsReturns),
-					})
+				if !ok {
+					continue
 				}
+				cs.Methods = append(cs.Methods, &Method{
+					Service: s.Name, Name: caser.String(r.Name), Request: r.RequestType,
+					Reply: r.ReturnsType, Type: getMethodType(r.StreamsRequest, r.StreamsReturns),
+				})
 			}
 			res = append(res, cs)
 		}),

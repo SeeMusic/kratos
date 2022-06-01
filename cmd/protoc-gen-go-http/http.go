@@ -163,9 +163,10 @@ func buildMethodDesc(g *protogen.GeneratedFile, m *protogen.Method, method, path
 	defer func() { methodSets[m.GoName]++ }()
 
 	vars := buildPathVars(path)
-	fields := m.Input.Desc.Fields()
 
 	for v, s := range vars {
+		fields := m.Input.Desc.Fields()
+
 		if s != nil {
 			path = replacePath(v, *s, path)
 		}
@@ -191,13 +192,14 @@ func buildMethodDesc(g *protogen.GeneratedFile, m *protogen.Method, method, path
 		}
 	}
 	return &methodDesc{
-		Name:    m.GoName,
-		Num:     methodSets[m.GoName],
-		Request: g.QualifiedGoIdent(m.Input.GoIdent),
-		Reply:   g.QualifiedGoIdent(m.Output.GoIdent),
-		Path:    path,
-		Method:  method,
-		HasVars: len(vars) > 0,
+		Name:         m.GoName,
+		OriginalName: string(m.Desc.Name()),
+		Num:          methodSets[m.GoName],
+		Request:      g.QualifiedGoIdent(m.Input.GoIdent),
+		Reply:        g.QualifiedGoIdent(m.Output.GoIdent),
+		Path:         path,
+		Method:       method,
+		HasVars:      len(vars) > 0,
 	}
 }
 
