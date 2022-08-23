@@ -25,25 +25,26 @@ jobs:
           ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
       consul:
-        image: consul:latest
+        image: consul:1.12.3
         ports:
           - 8500:8500
       nacos:
-        image: nacos/nacos-server:latest
+        image: nacos/nacos-server:v2.1.0
         env:
           MODE: standalone
         ports:
           - "8848:8848"
           - "9848:9848"
       polaris:
-        image: houseme/polaris-server-with-config:latest
+        image: polarismesh/polaris-server-standalone:v1.9.0
         ports:
           - 8090:8090
           - 8091:8091
+          - 8093:8093
     steps:
       - uses: actions/checkout@v3
       - name: Set up Go
-        uses: actions/setup-go@v3.2.0
+        uses: actions/setup-go@v3.2.1
         with:
           go-version: ${{ matrix.go }}
 

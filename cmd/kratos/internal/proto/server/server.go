@@ -7,14 +7,11 @@ import (
 	"path"
 	"strings"
 
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
-
 	"github.com/emicklei/proto"
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
-
-var caser = cases.Title(language.English)
 
 // CmdServer the service command.
 var CmdServer = &cobra.Command{
@@ -59,7 +56,7 @@ func run(cmd *cobra.Command, args []string) {
 		proto.WithService(func(s *proto.Service) {
 			cs := &Service{
 				Package: pkg,
-				Service: s.Name,
+				Service: serviceName(s.Name),
 			}
 			for _, e := range s.Elements {
 				r, ok := e.(*proto.RPC)
@@ -67,7 +64,7 @@ func run(cmd *cobra.Command, args []string) {
 					continue
 				}
 				cs.Methods = append(cs.Methods, &Method{
-					Service: s.Name, Name: caser.String(r.Name), Request: r.RequestType,
+					Service: serviceName(s.Name), Name: serviceName(r.Name), Request: r.RequestType,
 					Reply: r.ReturnsType, Type: getMethodType(r.StreamsRequest, r.StreamsReturns),
 				})
 			}
@@ -106,4 +103,14 @@ func getMethodType(streamsRequest, streamsReturns bool) MethodType {
 		return returnsStreamsType
 	}
 	return unaryType
+}
+
+func serviceName(name string) string {
+	return toUpperCamelCase(strings.Split(name, ".")[0])
+}
+
+func toUpperCamelCase(s string) string {
+	s = strings.ReplaceAll(s, "_", " ")
+	s = cases.Title(language.Und, cases.NoLower).String(s)
+	return strings.ReplaceAll(s, " ", "")
 }

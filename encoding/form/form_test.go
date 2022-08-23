@@ -11,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/go-kratos/kratos/v2/encoding"
+	bdtest "github.com/go-kratos/kratos/v2/internal/testdata/binding"
 	"github.com/go-kratos/kratos/v2/internal/testdata/complex"
 	ectest "github.com/go-kratos/kratos/v2/internal/testdata/encoding"
 )
@@ -190,5 +191,30 @@ func TestDecodeBytesValuePb(t *testing.T) {
 	}
 	if !reflect.DeepEqual(url, string(in2.Bytes.Value)) {
 		t.Errorf("except %v, got %v", val, string(in2.Bytes.Value))
+	}
+}
+
+func TestEncodeFieldMask(t *testing.T) {
+	req := &bdtest.HelloRequest{
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"foo", "bar"}},
+	}
+	if v := EncodeFieldMask(req.ProtoReflect()); v != "updateMask=foo,bar" {
+		t.Errorf("got %s", v)
+	} else {
+		t.Log(v)
+	}
+}
+
+func TestOptional(t *testing.T) {
+	v := int32(100)
+	req := &bdtest.HelloRequest{
+		Name:     "foo",
+		Sub:      &bdtest.Sub{Name: "bar"},
+		OptInt32: &v,
+	}
+	if v, _ := EncodeValues(req); v.Encode() != "name=foo&optInt32=100&sub.naming=bar" {
+		t.Errorf("got %s", v.Encode())
+	} else {
+		t.Log(v)
 	}
 }

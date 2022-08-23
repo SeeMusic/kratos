@@ -14,7 +14,6 @@ var CmdProto = &cobra.Command{
 	Use:   "proto",
 	Short: "Generate the proto files",
 	Long:  "Generate the proto files.",
-	Run:   run,
 }
 
 func init() {
@@ -22,7 +21,4 @@ func init() {
 	CmdProto.AddCommand(client.CmdClient)
 	CmdProto.AddCommand(server.CmdServer)
 	CmdProto.AddCommand(gen.CmdGen)
-}
-
-func run(cmd *cobra.Command, args []string) {
 }
