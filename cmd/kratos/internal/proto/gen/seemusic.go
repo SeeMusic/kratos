@@ -242,7 +242,15 @@ func commandArgs(inputDir string, target ...string) ([]string, error) {
 		}
 	}
 
-	// TODO: add validate generator
+	// add validate generator
+	reg := regexp.MustCompile(`\n[^/]*(import)\s+"validate/validate.proto"`)
+	for _, t := range target {
+		protoBytes, err := os.ReadFile(t)
+		if err == nil && len(protoBytes) > 0 && reg.Match(protoBytes) {
+			args = append(args, "--validate_out=lang=go,paths=source_relative:"+inputDir)
+			break
+		}
+	}
 
 	args = append(args, target...)
 	return args, nil
